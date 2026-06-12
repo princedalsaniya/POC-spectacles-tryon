@@ -430,10 +430,10 @@
     </div>
 
     <!-- MediaPipe Vision -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs" type="module"></script>
-
     <script type="module">
-        import { FaceLandmarker, FilesetResolver, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+        // Use the correct ESM import path
+        const vision = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/+esm");
+        const { FaceLandmarker, FilesetResolver } = vision;
 
         // ===== FRAME DATA =====
         const FRAMES = [
@@ -494,7 +494,7 @@
         // ===== INIT FACE LANDMARKER =====
         async function initFaceLandmarker() {
             const filesetResolver = await FilesetResolver.forVisionTasks(
-                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
             );
 
             faceLandmarker = await FaceLandmarker.create(filesetResolver, {
