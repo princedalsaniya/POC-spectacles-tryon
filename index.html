@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Virtual Try-On | SpectaView</title>
+    <title>Om Optics | Virtual Try-On</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -71,34 +71,6 @@
             gap: 32px;
         }
 
-        .hero {
-            text-align: center;
-            padding: 40px 0 20px;
-        }
-
-        .hero h1 {
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, var(--accent), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero p {
-            color: var(--text-muted);
-            font-size: 16px;
-            line-height: 1.5;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
 
         .frames-grid {
             display: grid;
@@ -130,7 +102,9 @@
             max-width: 260px;
             height: 120px;
             object-fit: contain;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
         }
 
         .frame-card .frame-info {
@@ -143,29 +117,9 @@
             margin-bottom: 4px;
         }
 
-        .frame-card .frame-tag {
-            font-size: 12px;
-            color: var(--accent);
-            background: rgba(56, 189, 248, 0.1);
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: inline-block;
+        .frame-card .frame-name {
+            text-align: center;
         }
-
-        .try-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            width: 100%;
-        }
-
-        .try-btn:hover { background: var(--primary-dark); }
 
         /* ===== TRY-ON SCREEN ===== */
         #tryon-screen {
@@ -382,7 +336,6 @@
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 480px) {
-            .hero h1 { font-size: 24px; }
             .frames-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -394,15 +347,10 @@
         <header>
             <div class="logo">
                 <div class="logo-icon">👓</div>
-                <span>SpectaView</span>
+                <span>Om Optics</span>
             </div>
         </header>
-        <div class="hero">
-            <h1>Virtual Try-On</h1>
-            <p>See how frames look on you before you buy. Pick a frame below and try it on instantly.</p>
-        </div>
         <div>
-            <div class="section-title">🕶️ Available Frames</div>
             <div class="frames-grid" id="frames-grid"></div>
         </div>
     </div>
@@ -428,8 +376,7 @@
         <div class="frame-switcher">
             <div class="switcher-scroll" id="switcher-scroll"></div>
             <div class="action-buttons">
-                <button class="action-btn" onclick="capturePhoto()">📸 Capture</button>
-                <button class="action-btn secondary" onclick="downloadPhoto()">💾 Save</button>
+                <button class="action-btn" onclick="captureAndDownload()">📸 Capture</button>
             </div>
         </div>
 
@@ -453,7 +400,6 @@
             {
                 id: "clubmaster",
                 name: "Classic Clubmaster",
-                tag: "Spectacles",
                 image: "frames/frame1-spectacles.png",
                 // Tuning: how much wider than eye-to-eye distance
                 widthMultiplier: 2.1,
@@ -463,7 +409,6 @@
             {
                 id: "rectangle",
                 name: "Modern Rectangle",
-                tag: "Spectacles",
                 image: "frames/frame2-sunglasses.png",
                 widthMultiplier: 2.0,
                 yOffset: 0.1,
@@ -477,7 +422,6 @@
         let currentFrameIndex = 0;
         let frameImages = {};
         let animFrameId = null;
-        let lastCaptureCanvas = null;
 
         // ===== INIT HOME =====
         function initHome() {
@@ -485,11 +429,7 @@
             grid.innerHTML = FRAMES.map((f, i) => `
                 <div class="frame-card" onclick="window._startTryOn(${i})">
                     <img src="${f.image}" alt="${f.name}">
-                    <div class="frame-info">
-                        <div class="frame-name">${f.name}</div>
-                        <span class="frame-tag">${f.tag}</span>
-                    </div>
-                    <button class="try-btn">Try On →</button>
+                    <div class="frame-name">${f.name}</div>
                 </div>
             `).join("");
         }
@@ -705,13 +645,13 @@
         };
 
         // ===== CAPTURE & SAVE =====
-        window.capturePhoto = function() {
+        window.captureAndDownload = function() {
             if (!video || !canvas) return;
 
-            lastCaptureCanvas = document.createElement("canvas");
-            lastCaptureCanvas.width = canvas.width;
-            lastCaptureCanvas.height = canvas.height;
-            const captureCtx = lastCaptureCanvas.getContext("2d");
+            const captureCanvas = document.createElement("canvas");
+            captureCanvas.width = canvas.width;
+            captureCanvas.height = canvas.height;
+            const captureCtx = captureCanvas.getContext("2d");
 
             // Draw mirrored video
             captureCtx.save();
@@ -722,20 +662,12 @@
             // Draw overlay
             captureCtx.drawImage(canvas, 0, 0);
 
-            showToast("📸 Photo captured! Tap Save to download.");
-        };
-
-        window.downloadPhoto = function() {
-            if (!lastCaptureCanvas) {
-                showToast("Take a photo first!");
-                return;
-            }
-
+            // Trigger download
             const link = document.createElement("a");
-            link.download = `spectaview-tryon-${Date.now()}.png`;
-            link.href = lastCaptureCanvas.toDataURL("image/png");
+            link.download = `om-optics-tryon-${Date.now()}.png`;
+            link.href = captureCanvas.toDataURL("image/png");
             link.click();
-            showToast("💾 Photo saved!");
+            showToast("📸 Photo saved!");
         };
 
         function showToast(msg) {
